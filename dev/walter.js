@@ -36,6 +36,20 @@ var walter = (function() {
         }
     }
 
+    /**
+     * Converts a json object to an array of values without the keys
+     * @param  {JSON} jsonObj
+     * @return {argsArray}
+     */
+    function convertJsonToArguments (jsonObj) {
+        return Object.keys(jsonObj).map(function (key) {return jsonObj[key]});
+    }
+
+    function returnErrorResponse (response, statusCode, error) {
+        response.writeHead(statusCode, error.message, {'Content-Type': 'text/html'});
+        response.end();
+    }
+
     ////////////////////////
     // Walter Routing API //
     ////////////////////////

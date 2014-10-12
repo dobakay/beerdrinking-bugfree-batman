@@ -25,11 +25,6 @@ var router = (function() {
     // Internal Functions //
     ////////////////////////
 
-    function returnErrorResponse (response, statusCode, error) {
-        response.writeHead(statusCode, error.message, {'Content-Type': 'text/html'});
-        response.end();
-    }
-
     /**
      * Adds a HTTP Method with the corresponding, url the handler for it.
      * There can be one HTTP Method with many urls.
@@ -51,14 +46,6 @@ var router = (function() {
         else {
             requests[method].asyncCallbacks[url] = callback;
         }
-    }
-    /**
-     * Converts a json object to an array of values without the keys
-     * @param  {JSON} jsonObj
-     * @return {argsArray}
-     */
-    function convertJsonToArguments (jsonObj) {
-        return Object.keys(jsonObj).map(function (key) {return jsonObj[key]});
     }
 
     //////////////////////////
