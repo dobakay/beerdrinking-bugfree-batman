@@ -52,6 +52,8 @@ var router = (function() {
     // Router API functions //
     //////////////////////////
 
+    // SYNC
+
     router.get = function (url, callback) {
         if(!url && !callback) {
             throw new RouterException('Url, or callback is undefined or null.');
@@ -79,6 +81,8 @@ var router = (function() {
         }
         addMethod(httpMethods.delete, url, callback);
     }
+
+    // ASYNC
 
     router.getAsync = function (url, callback) {
         if(!url && !callback) {
@@ -112,9 +116,8 @@ var router = (function() {
      * Executes one of the predefined actions depending on the given parameters object in the process function.
      * @param  {[type]} method       'GET/POST/PUT/DELETE'
      * @param  {[type]} url          '/example/url'. Url that we get from the http request object.
-     * @param  {[type]} data         Chunk or whole data sent on request. Developer using the router decides how to handle it.
      */
-    router.executeCallback = function (request, response, async, data) {
+    router.executeCallback = function (request, response, async) {
         var method = request.method,
             url = request.url;
         if(!requests[method]) {
@@ -126,7 +129,7 @@ var router = (function() {
             if(!callBackToBeExecuted) {
                 throw new RouterException('HTTP Method with url "' + url + '" was not found.', 'pageNotFoundException');
             }
-            callBackToBeExecuted(request, response, data);
+            callBackToBeExecuted(request, response);
         }
     }
 

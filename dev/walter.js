@@ -90,9 +90,9 @@ var walter = (function() {
         }
     }
 
-    walter.process = function (request, response, async, data) {
+    walter.process = function (request, response, async) {
         try {
-            router.executeCallback(request, response, async, data);
+            router.executeCallback(request, response, async);
         }
         catch(err) {
             console.log(err.type);
@@ -112,11 +112,13 @@ var walter = (function() {
             var payload = '';
             request.on('data', function (chunk) {
                 payload += chunk;
-                walter.process(request, response, true, chunk);
+                request.payload = chunk;
+                walter.process(request, response, true);
             });
 
             request.on('end', function () {
-                walter.process(request, response, false, payload);
+                request.payload = payload;
+                walter.process(request, response, false);
             });
         });
 
