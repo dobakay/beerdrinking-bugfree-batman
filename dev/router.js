@@ -112,7 +112,7 @@ var router = (function() {
         addMethod(httpMethods.delete, url, callback, true);
     }
 
-        /**
+    /**
      * Executes one of the predefined actions depending on the given parameters object in the process function.
      * @param  {[type]} method       'GET/POST/PUT/DELETE'
      * @param  {[type]} url          '/example/url'. Url that we get from the http request object.
@@ -125,11 +125,9 @@ var router = (function() {
         }
         else {
             var callBackToBeExecuted = (!async)? requests[method].callbacks[url] : requests[method].asyncCallbacks[url];
-
-            if(!callBackToBeExecuted) {
-                throw new RouterException('HTTP Method with url "' + url + '" was not found.', 'pageNotFoundException');
+            if(!!callBackToBeExecuted) {
+                callBackToBeExecuted(request, response);
             }
-            callBackToBeExecuted(request, response);
         }
     }
 
