@@ -2,7 +2,12 @@ var router = (function() {
     'use strict';
 
     var router = {};
-
+    var httpMethods = {
+        get: 'GET',
+        post: 'POST',
+        put: 'PUT',
+        delete: 'DELETE'
+    }
     var requests = {};
 
     ///////////////////////////////////
@@ -31,42 +36,22 @@ var router = (function() {
      * @param {GET/POST/PUT/DELETE}   method   HTTP Method
      * @param {URL String}   url      URL String gotten from the request object
      * @param {Function} callback Handler that makes a call to the "hard-core" logic of the server
+     * @param {Bool} async Defines where to store the callback function
      */
-    function addMethod (method, url, callback) {
+    function addMethod (method, url, callback, async) {
         if(!requests[method]) {
             requests[method] = {
-                callbacks: {}
+                callbacks: {},
+                asyncCallbacks: {}
             }
         }
-        requests[method].callbacks[url] = callback;
-    }
-
-    /**
-     * Executes one of the predefined actions depending on the given parameters object in the process function.
-     * @param  {[type]} method       'GET/POST/PUT/DELETE'
-     * @param  {[type]} url          '/example/url'. Url that we get from the http request object.
-     * @param  {[type]} callbackArgs callbackArgs[0] is always a http response object.
-     *                               The rest are fields of the json object passed with the request (if such an object
-     *                               was passed)
-     */
-    function executeCallback (method, url, response, callbackArgs) {
-        if(!requests[method]) {
-            throw new RouterException('HTTP Method not found.');
+        if(!async) {
+            requests[method].callbacks[url] = callback;
         }
         else {
-            if(!requests[method].callbacks[url]) {
-                throw new RouterException('HTTP Method with url "' + url + '" was not found.', 'pageNotFoundException');
-            }
-            if(!callbackArgs) {
-                requests[method].callbacks[url](response);
-            }
-            else {
-                callbackArgs.unshift(response);
-                requests[method].callbacks[url].apply(null, callbackArgs);
-            }
+            requests[method].asyncCallbacks[url] = callback;
         }
     }
-
     /**
      * Converts a json object to an array of values without the keys
      * @param  {JSON} jsonObj
@@ -76,70 +61,85 @@ var router = (function() {
         return Object.keys(jsonObj).map(function (key) {return jsonObj[key]});
     }
 
-    ////////////////////////////////
-    // EXPRESS-like API functions //
-    ////////////////////////////////
+    //////////////////////////
+    // Router API functions //
+    //////////////////////////
 
     router.get = function (url, callback) {
         if(!url && !callback) {
             throw new RouterException('Url, or callback is undefined or null.');
         }
-        addMethod('GET', url, callback);
+        addMethod(httpMethods.get, url, callback);
     }
 
     router.post = function (url, callback) {
         if(!url && !callback) {
             throw new RouterException('Url, or callback is undefined or null.');
         }
-        addMethod('POST', url, callback);
+        addMethod(httpMethods.post, url, callback);
     }
 
     router.put = function (url, callback) {
         if(!url && !callback) {
             throw new RouterException('Url, or callback is undefined or null.');
         }
-        addMethod('PUT', url, callback);
+        addMethod(httpMethods.put, url, callback);
     }
 
     router.delete = function (url, callback) {
         if(!url && !callback) {
             throw new RouterException('Url, or callback is undefined or null.');
         }
-        addMethod('DELETE', url, callback);
+        addMethod(httpMethods.delete, url, callback);
     }
 
+    router.getAsync = function (url, callback) {
+        if(!url && !callback) {
+            throw new RouterException('Url, or callback is undefined or null.');
+        }
+        addMethod(httpMethods.get, url, callback, true);
+    }
 
-    /**
-     * Handles synchronously a request and invokes the correct HTTP Method with the request
-     * parameters. If an unhandled error occurs returns a generic 404 Error response.
-     * @param  {Object} request
+    router.postAsync = function (url, callback) {
+        if(!url && !callback) {
+            throw new RouterException('Url, or callback is undefined or null.');
+        }
+        addMethod(httpMethods.post, url, callback, true);
+    }
+
+    router.putAsync = function (url, callback) {
+        if(!url && !callback) {
+            throw new RouterException('Url, or callback is undefined or null.');
+        }
+        addMethod(httpMethods.put, url, callback, true);
+    }
+
+    router.deleteAsync = function (url, callback) {
+        if(!url && !callback) {
+            throw new RouterException('Url, or callback is undefined or null.');
+        }
+        addMethod(httpMethods.delete, url, callback, true);
+    }
+
+        /**
+     * Executes one of the predefined actions depending on the given parameters object in the process function.
+     * @param  {[type]} method       'GET/POST/PUT/DELETE'
+     * @param  {[type]} url          '/example/url'. Url that we get from the http request object.
+     * @param  {[type]} data         Chunk or whole data sent on request. Developer using the router decides how to handle it.
      */
-    router.process = function (request) {
+    router.executeCallback = function (request, response, async, data) {
         var method = request.method,
-            url = request.url,
-            response = request.response,
-            data = request.body, //unparsed JSON string or undefined
-            args = null;
-
-        if(!!data ) {
-            console.log(data);
-            data = JSON.parse(data);
-            args = convertJsonToArguments(data);
+            url = request.url;
+        if(!requests[method]) {
+            throw new RouterException('HTTP Method not found.');
         }
+        else {
+            var callBackToBeExecuted = (!async)? requests[method].callbacks[url] : requests[method].asyncCallbacks[url];
 
-        try {
-            executeCallback(method, url, response, args);
-        }
-        catch(err) {
-            console.log(err.type);
-            console.log(err.message);
-            console.log(err.internalMessage);
-            if(err.innerType === 'pageNotFoundException') {
-                returnErrorResponse(response, 404, "Page not found.");
+            if(!callBackToBeExecuted) {
+                throw new RouterException('HTTP Method with url "' + url + '" was not found.', 'pageNotFoundException');
             }
-            else {
-                returnErrorResponse(response, 500, "Could not handle that Error: " + err.message);
-            }
+            callBackToBeExecuted(request, response, data);
         }
     }
 
