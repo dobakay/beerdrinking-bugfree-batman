@@ -68,7 +68,7 @@ var walter = (function() {
             router.post(url, callback);
         }
         else {
-            router.psotAsync(url, callback);
+            router.postAsync(url, callback);
         }
     }
 
